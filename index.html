@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student CRM</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f7f5; --card:#ffffff; --ink:#1a1a18; --muted:#6b6b66;
+  --line:#e3e3de; --accent:#b4562e; --accent-soft:#fbf1ec;
+  --green:#2f7a4f; --green-soft:#eaf5ee;
+  --amber:#a1701a; --amber-soft:#fdf4e3;
+  --red:#a83a3a; --red-soft:#fbeceb;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.01em}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:inherit;background:#fff;border:1px solid var(--line);
+  border-radius:7px;padding:7px 9px;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--muted);margin-bottom:4px}
+
+.wrap{max-width:1180px;margin:0 auto;padding:20px 22px 60px}
+header.top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+header.top h1{font-size:20px}
+header.top .sub{color:var(--muted);font-size:13px}
+.spacer{flex:1}
+
+.btn{background:var(--ink);color:#fff;padding:8px 14px;border-radius:7px;font-weight:500;font-size:13px}
+.btn:hover{opacity:.88}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{background:#faf9f7;opacity:1}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.danger{background:var(--red-soft);color:var(--red);border:1px solid #f0d5d3}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.stat .v{font-size:24px;font-weight:600;margin-top:3px;letter-spacing:-.02em}
+.stat .n{font-size:12px;color:var(--muted);margin-top:1px}
+
+/* toolbar */
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input[type=search]{max-width:260px}
+.toolbar select{width:auto;min-width:120px}
+
+/* table */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+  font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfbfa;
+  cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--ink)}
+td{padding:11px 14px;border-bottom:1px solid #f0efec;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#fbfaf8}
+.name{font-weight:600}
+.tiny{font-size:12px;color:var(--muted)}
+.right{text-align:right}
+.mono{font-variant-numeric:tabular-nums}
+
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill.active{background:var(--green-soft);color:var(--green)}
+.pill.paused{background:var(--amber-soft);color:var(--amber)}
+.pill.ended{background:#f0efec;color:var(--muted)}
+.owed{color:var(--red);font-weight:600}
+.clear{color:var(--muted)}
+
+.empty{padding:44px 20px;text-align:center;color:var(--muted)}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(20,20,18,.34);opacity:0;pointer-events:none;
+  transition:opacity .18s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(560px,100%);background:var(--bg);
+  border-left:1px solid var(--line);transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);
+  z-index:50;overflow-y:auto}
+.drawer.on{transform:none}
+.drawer .dhead{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);
+  padding:16px 20px;display:flex;align-items:center;gap:10px;z-index:2}
+.drawer .dhead h2{font-size:16px;flex:1}
+.dbody{padding:18px 20px 40px}
+.x{font-size:20px;line-height:1;color:var(--muted);padding:2px 6px;border-radius:5px}
+.x:hover{background:#eceae6;color:var(--ink)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:12px}
+.section{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:15px 16px;margin-bottom:14px}
+.section h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:11px}
+.row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f2f1ee;font-size:13px}
+.row:last-child{border-bottom:none}
+.row .g{flex:1;min-width:0}
+.del{color:#c4c2bd;font-size:15px;padding:0 4px;border-radius:4px}
+.del:hover{color:var(--red);background:var(--red-soft)}
+.addline{display:grid;gap:7px;margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
+.addline .r{display:grid;grid-template-columns:1.1fr 1fr 1fr auto;gap:7px;align-items:end}
+.balance{display:flex;justify-content:space-between;padding:7px 0;font-size:13px}
+.balance.total{border-top:1px solid var(--line);margin-top:6px;padding-top:10px;font-weight:600;font-size:15px}
+.toggle{display:flex;gap:0;border:1px solid var(--line);border-radius:7px;overflow:hidden;width:fit-content}
+.toggle button{padding:5px 11px;font-size:12px;background:#fff;border-right:1px solid var(--line)}
+.toggle button:last-child{border-right:none}
+.toggle button.on{background:var(--ink);color:#fff}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}.addline .r{grid-template-columns:1fr 1fr}
+  .hide-sm{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Student CRM</h1>
+    <span class="sub" id="subline"></span>
+    <span class="spacer"></span>
+    <button class="btn ghost sm" id="exportBtn">Export</button>
+    <button class="btn ghost sm" id="importBtn">Import</button>
+    <button class="btn" id="addBtn">+ Add student</button>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Search name, email, subject…">
+    <select id="fstatus">
+      <option value="all">All statuses</option>
+      <option value="active" selected>Active only</option>
+      <option value="paused">Paused</option>
+      <option value="ended">Ended</option>
+    </select>
+    <select id="fowed">
+      <option value="all">All balances</option>
+      <option value="owed">Owes money</option>
+      <option value="clear">Paid up</option>
+    </select>
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead><tr>
+        <th data-sort="name">Student</th>
+        <th data-sort="subject" class="hide-sm">Subject</th>
+        <th data-sort="rate" class="right hide-sm">Rate</th>
+        <th data-sort="sessions" class="right">Sessions</th>
+        <th data-sort="attendance" class="right hide-sm">Attend.</th>
+        <th data-sort="last" class="hide-sm">Last seen</th>
+        <th data-sort="balance" class="right">Balance</th>
+        <th data-sort="status">Status</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none"></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead">
+    <h2 id="dtitle">Student</h2>
+    <button class="btn danger sm" id="delBtn">Delete</button>
+    <button class="x" id="closeBtn">&times;</button>
+  </div>
+  <div class="dbody" id="dbody"></div>
+</aside>
+
+<input type="file" id="fileIn" accept="application/json" style="display:none">
+
+<script>
+const KEY='student-crm-v1';
+const uid=()=>Math.random().toString(36).slice(2,10);
+let db={students:[]}, cur=null, sort={by:'name',dir:1};
+
+function load(){
+  try{const r=localStorage.getItem(KEY); if(r) db=JSON.parse(r);}catch(e){}
+  if(!db.students) db.students=[];
+  if(!db.students.length) seed();
+}
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){} }
+function seed(){
+  const d=n=>{const x=new Date();x.setDate(x.getDate()-n);return x.toISOString().slice(0,10)};
+  db.students=[
+    {id:uid(),name:'Amina Yusuf',email:'amina.y@example.com',phone:'555-0142',
+     guardian:'Halima Yusuf',guardianPhone:'555-0143',subject:'Algebra II',rate:45,
+     start:d(120),status:'active',notes:'Prefers Tue/Thu evenings. Exam in 3 weeks.',
+     sessions:[{id:uid(),date:d(2),hours:1,attended:true,note:'Quadratics review'},
+               {id:uid(),date:d(9),hours:1.5,attended:true,note:''},
+               {id:uid(),date:d(16),hours:1,attended:false,note:'Sick — not charged'}],
+     payments:[{id:uid(),date:d(10),amount:135,method:'Transfer',note:'Sept block'}],
+     charges:[]},
+    {id:uid(),name:'Daniel Okoro',email:'d.okoro@example.com',phone:'555-0177',
+     guardian:'',guardianPhone:'',subject:'SAT Prep',rate:60,
+     start:d(45),status:'active',notes:'Test date Nov 2. Focus on reading section.',
+     sessions:[{id:uid(),date:d(3),hours:2,attended:true,note:'Practice test 3'},
+               {id:uid(),date:d(10),hours:2,attended:true,note:''}],
+     payments:[],charges:[{id:uid(),date:d(45),amount:50,label:'Materials / workbook'}]}
+  ];
+  save();
+}
+
+/* ---- money & derived ---- */
+const money=n=>(n<0?'-':'')+'$'+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+function billed(s){
+  // attended sessions billed at hourly rate + any one-off charges
+  const fromSessions=(s.sessions||[]).reduce((t,x)=>t+(x.attended?(+x.hours||0)*(+s.rate||0):0),0);
+  const extra=(s.charges||[]).reduce((t,x)=>t+(+x.amount||0),0);
+  return fromSessions+extra;
+}
+const paid=s=>(s.payments||[]).reduce((t,x)=>t+(+x.amount||0),0);
+const balance=s=>+(billed(s)-paid(s)).toFixed(2);
+function attendance(s){
+  const all=(s.sessions||[]).length; if(!all) return null;
+  return Math.round((s.sessions.filter(x=>x.attended).length/all)*100);
+}
+function lastSeen(s){
+  const a=(s.sessions||[]).filter(x=>x.attended).map(x=>x.date).sort();
+  return a.length?a[a.length-1]:null;
+}
+function fmtDate(d){ if(!d) return '—';
+  const dt=new Date(d+'T00:00:00'); if(isNaN(dt)) return d;
+  return dt.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'2-digit'}); }
+function ago(d){ if(!d) return '';
+  const n=Math.round((Date.now()-new Date(d+'T00:00:00'))/864e5);
+  return n<=0?'today':n===1?'yesterday':n+'d ago'; }
+
+/* ---- render ---- */
+function visible(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const st=document.getElementById('fstatus').value;
+  const ow=document.getElementById('fowed').value;
+  let list=db.students.filter(s=>{
+    if(st!=='all'&&s.status!==st) return false;
+    const b=balance(s);
+    if(ow==='owed'&&b<=0.005) return false;
+    if(ow==='clear'&&b>0.005) return false;
+    if(q&&!(`${s.name} ${s.email} ${s.subject} ${s.guardian||''}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const val=s=>({name:s.name.toLowerCase(),subject:(s.subject||'').toLowerCase(),rate:+s.rate||0,
+    sessions:(s.sessions||[]).length,attendance:attendance(s)??-1,last:lastSeen(s)||'',
+    balance:balance(s),status:s.status}[sort.by]);
+  return list.sort((a,b)=>{const x=val(a),y=val(b); return (x>y?1:x<y?-1:0)*sort.dir;});
+}
+function renderStats(){
+  const act=db.students.filter(s=>s.status==='active');
+  const owed=db.students.reduce((t,s)=>t+Math.max(0,balance(s)),0);
+  const owers=db.students.filter(s=>balance(s)>0.005).length;
+  const wk=new Date(); wk.setDate(wk.getDate()-7); const wkStr=wk.toISOString().slice(0,10);
+  let sess=0,hrs=0;
+  db.students.forEach(s=>(s.sessions||[]).forEach(x=>{if(x.date>=wkStr&&x.attended){sess++;hrs+=+x.hours||0}}));
+  const allS=db.students.flatMap(s=>s.sessions||[]);
+  const att=allS.length?Math.round(allS.filter(x=>x.attended).length/allS.length*100):null;
+  const cards=[
+    ['Active students',act.length,db.students.length+' total'],
+    ['Outstanding',money(owed),owers+' student'+(owers===1?'':'s')],
+    ['Sessions this week',sess,hrs+' hr'+(hrs===1?'':'s')],
+    ['Attendance rate',att===null?'—':att+'%','all time']
+  ];
+  document.getElementById('stats').innerHTML=cards.map(c=>
+    `<div class="stat"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="n">${c[2]}</div></div>`).join('');
+  document.getElementById('subline').textContent=db.students.length+' student'+(db.students.length===1?'':'s')+' tracked';
+}
+function renderTable(){
+  const list=visible(), tb=document.getElementById('tbody'), em=document.getElementById('empty');
+  tb.innerHTML=list.map(s=>{
+    const b=balance(s), a=attendance(s), ls=lastSeen(s);
+    return `<tr data-id="${s.id}">
+      <td><div class="name">${esc(s.name)}</div><div class="tiny">${esc(s.email||s.phone||'')}</div></td>
+      <td class="hide-sm">${esc(s.subject||'—')}</td>
+      <td class="right mono hide-sm">${s.rate?money(+s.rate)+'/hr':'—'}</td>
+      <td class="right mono">${(s.sessions||[]).length}</td>
+      <td class="right mono hide-sm">${a===null?'—':a+'%'}</td>
+      <td class="hide-sm tiny">${ls?fmtDate(ls)+' · '+ago(ls):'never'}</td>
+      <td class="right mono ${b>0.005?'owed':'clear'}">${b>0.005?money(b):(b<-0.005?money(b)+' cr':'—')}</td>
+      <td><span class="pill ${s.status}">${s.status}</span></td>
+    </tr>`;}).join('');
+  em.style.display=list.length?'none':'block';
+  em.textContent=db.students.length?'No students match these filters.':'No students yet — add your first one.';
+}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function render(){renderStats();renderTable();}
+
+/* ---- drawer ---- */
+function open(id){
+  cur=db.students.find(s=>s.id===id); if(!cur) return;
+  document.getElementById('dtitle').textContent=cur.name||'New student';
+  document.getElementById('scrim').classList.add('on');
+  document.getElementById('drawer').classList.add('on');
+  renderDrawer();
+}
+function close(){
+  document.getElementById('scrim').classList.remove('on');
+  document.getElementById('drawer').classList.remove('on');
+  cur=null; render();
+}
+function renderDrawer(){
+  const s=cur, today=new Date().toISOString().slice(0,10);
+  const sess=[...(s.sessions||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const pays=[...(s.payments||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const chg=[...(s.charges||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const b=balance(s);
+  document.getElementById('dbody').innerHTML=`
+  <div class="section">
+    <h3>Details</h3>
+    <div class="grid2">
+      <div class="field"><label>Name</label><input data-f="name" value="${esc(s.name)}"></div>
+      <div class="field"><label>Subject</label><input data-f="subject" value="${esc(s.subject)}"></div>
+      <div class="field"><label>Email</label><input data-f="email" value="${esc(s.email)}"></div>
+      <div class="field"><label>Phone</label><input data-f="phone" value="${esc(s.phone)}"></div>
+      <div class="field"><label>Parent / guardian</label><input data-f="guardian" value="${esc(s.guardian)}"></div>
+      <div class="field"><label>Guardian phone</label><input data-f="guardianPhone" value="${esc(s.guardianPhone)}"></div>
+      <div class="field"><label>Rate ($/hour)</label><input data-f="rate" type="number" min="0" step="1" value="${s.rate??''}"></div>
+      <div class="field"><label>Start date</label><input data-f="start" type="date" value="${esc(s.start)}"></div>
+      <div class="field"><label>Status</label><select data-f="status">
+        ${['active','paused','ended'].map(v=>`<option value="${v}"${s.status===v?' selected':''}>${v}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="field" style="margin:0"><label>Notes</label><textarea data-f="notes" rows="3">${esc(s.notes)}</textarea></div>
+  </div>
+
+  <div class="section">
+    <h3>Account</h3>
+    <div class="balance"><span>Billed (attended sessions + charges)</span><span class="mono">${money(billed(s))}</span></div>
+    <div class="balance"><span>Paid</span><span class="mono">${money(paid(s))}</span></div>
+    <div class="balance total"><span>${b>0.005?'Outstanding':b<-0.005?'Credit':'Settled'}</span>
+      <span class="mono ${b>0.005?'owed':''}">${money(Math.abs(b))}</span></div>
+  </div>
+
+  <div class="section">
+    <h3>Sessions &amp; attendance</h3>
+    ${sess.length?sess.map(x=>`<div class="row">
+      <span class="pill ${x.attended?'active':'ended'}">${x.attended?'attended':'no-show'}</span>
+      <div class="g"><b>${fmtDate(x.date)}</b> · ${x.hours}h${x.note?' <span class="tiny">— '+esc(x.note)+'</span>':''}</div>
+      <span class="mono tiny">${x.attended?money((+x.hours||0)*(+s.rate||0)):'—'}</span>
+      <button class="del" data-del="sessions" data-i="${x.id}">&times;</button></div>`).join('')
+      :'<div class="tiny">No sessions logged.</div>'}
+    <div class="addline"><div class="r">
+      <div><label>Date</label><input id="sDate" type="date" value="${today}"></div>
+      <div><label>Hours</label><input id="sHours" type="number" step="0.25" min="0" value="1"></div>
+      <div><label>Showed?</label><select id="sAtt"><option value="1">Attended</option><option value="0">No-show</option></select></div>
+      <button class="btn sm" id="addSession">Log</button>
+    </div><input id="sNote" placeholder="Note (optional)"></div>
+  </div>
+
+  <div class="section">
+    <h3>Payments</h3>
+    ${pays.length?pays.map(x=>`<div class="row">
+      <div class="g"><b>${fmtDate(x.date)}</b> <span class="tiny">${esc(x.method||'')}${x.note?' · '+esc(x.note):''}</span></div>
+      <span class="mono" style="color:var(--green);font-weight:600">${money(+x.amount||0)}</span>
+      <button class="del" data-del="payments" data-i="${x.id}">&times;</button></div>`).join('')
+      :'<div class="tiny">No payments recorded.</div>'}
+    <div class="addline"><div class="r">
+      <div><label>Date</label><input id="pDate" type="date" value="${today}"></div>
+      <div><label>Amount</label><input id="pAmt" type="number" step="0.01" min="0" placeholder="0.00"></div>
+      <div><label>Method</label><input id="pMethod" placeholder="Cash"></div>
+      <button class="btn sm" id="addPayment">Add</button>
+    </div><input id="pNote" placeholder="Note (optional)"></div>
+  </div>
+
+  <div class="section">
+    <h3>One-off charges</h3>
+    ${chg.length?chg.map(x=>`<div class="row">
+      <div class="g"><b>${fmtDate(x.date)}</b> <span class="tiny">${esc(x.label||'')}</span></div>
+      <span class="mono">${money(+x.amount||0)}</span>
+      <button class="del" data-del="charges" data-i="${x.id}">&times;</button></div>`).join('')
+      :'<div class="tiny">None. Use for materials, exam fees, late cancellations.</div>'}
+    <div class="addline"><div class="r">
+      <div><label>Date</label><input id="cDate" type="date" value="${today}"></div>
+      <div><label>Amount</label><input id="cAmt" type="number" step="0.01" placeholder="0.00"></div>
+      <div><label>Label</label><input id="cLabel" placeholder="Workbook"></div>
+      <button class="btn sm" id="addCharge">Add</button>
+    </div></div>
+  </div>`;
+
+  document.querySelectorAll('#dbody [data-f]').forEach(el=>{
+    el.addEventListener('input',()=>{
+      const f=el.dataset.f;
+      cur[f]=(f==='rate')?(el.value===''?0:+el.value):el.value;
+      save();
+      if(f==='name') document.getElementById('dtitle').textContent=cur.name||'Untitled';
+      if(f==='rate'||f==='status') renderDrawer();
+    });
+  });
+  const g=id=>document.getElementById(id);
+  g('addSession').onclick=()=>{
+    (cur.sessions=cur.sessions||[]).push({id:uid(),date:g('sDate').value||today,
+      hours:+g('sHours').value||0,attended:g('sAtt').value==='1',note:g('sNote').value});
+    save();renderDrawer();};
+  g('addPayment').onclick=()=>{
+    if(!g('pAmt').value) return g('pAmt').focus();
+    (cur.payments=cur.payments||[]).push({id:uid(),date:g('pDate').value||today,
+      amount:+g('pAmt').value,method:g('pMethod').value,note:g('pNote').value});
+    save();renderDrawer();};
+  g('addCharge').onclick=()=>{
+    if(!g('cAmt').value) return g('cAmt').focus();
+    (cur.charges=cur.charges||[]).push({id:uid(),date:g('cDate').value||today,
+      amount:+g('cAmt').value,label:g('cLabel').value});
+    save();renderDrawer();};
+  document.querySelectorAll('#dbody [data-del]').forEach(btn=>{
+    btn.onclick=()=>{const k=btn.dataset.del;
+      cur[k]=cur[k].filter(x=>x.id!==btn.dataset.i); save(); renderDrawer();};
+  });
+}
+
+/* ---- events ---- */
+document.getElementById('tbody').addEventListener('click',e=>{
+  const tr=e.target.closest('tr'); if(tr) open(tr.dataset.id);
+});
+document.getElementById('addBtn').onclick=()=>{
+  const s={id:uid(),name:'',email:'',phone:'',guardian:'',guardianPhone:'',subject:'',rate:0,
+    start:new Date().toISOString().slice(0,10),status:'active',notes:'',
+    sessions:[],payments:[],charges:[]};
+  db.students.push(s); save(); render(); open(s.id);
+  setTimeout(()=>document.querySelector('#dbody [data-f="name"]')?.focus(),240);
+};
+document.getElementById('delBtn').onclick=()=>{
+  if(!cur) return;
+  if(confirm(`Delete ${cur.name||'this student'} and all their records?`)){
+    db.students=db.students.filter(s=>s.id!==cur.id); save(); close();}
+};
+document.getElementById('closeBtn').onclick=close;
+document.getElementById('scrim').onclick=close;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&cur)close()});
+['q','fstatus','fowed'].forEach(id=>document.getElementById(id).addEventListener('input',renderTable));
+document.querySelectorAll('th[data-sort]').forEach(th=>th.onclick=()=>{
+  const by=th.dataset.sort;
+  sort.dir = sort.by===by ? -sort.dir : (by==='balance'||by==='sessions'||by==='rate'?-1:1);
+  sort.by=by; renderTable();
+});
+document.getElementById('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='student-crm-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+};
+document.getElementById('importBtn').onclick=()=>document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    if(!d.students) throw 0;
+    if(confirm('Replace current data with the imported file?')){db=d;save();render();}
+  }catch(err){alert('That file does not look like a Student CRM export.')}};
+  r.readAsText(f); e.target.value='';
+};
+
+load(); render();
+</script>
+</body>
+</html>
